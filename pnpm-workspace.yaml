@@ -7,7 +7,7 @@ overrides:
   protobufjs: '^7.5.5'
   'minimatch@<3.1.3': '3.1.5'
   'minimatch@>=5.0.0 <5.1.7': '5.1.7'
-  'minimatch@>=9.0.0 <9.0.6': '9.0.6'
+  'minimatch@>=9.0.0 <9.0.7': '9.0.7'
   'minimatch@>=10.0.0 <10.2.1': '10.2.1'
   '@smithy/types': '4.7.1'
   '@codemirror/state': '6.5.4'
@@ -39,6 +39,22 @@ overrides:
   # @ai-sdk/google-vertex — resolves to the single patched build. 3.0.87 backports
   # sanitizeJsonSchema; the patch wires it into tool input_schema (see the patch).
   '@ai-sdk/anthropic': '3.0.87'
+
+  # --- security hardening: floor HIGH-severity runtime advisories (pnpm audit, 2026-06) ---
+  # Keyed-range overrides only replace the vulnerable versions, preserving major-line APIs.
+  'axios@<1.16.0': '1.18.1'
+  '@xmldom/xmldom@<0.8.12': '0.8.13'
+  '@xmldom/xmldom@>=0.9.0 <0.9.10': '0.9.10'
+  'tar@>=7.0.0 <7.5.11': '7.5.19'
+  'hono@<4.12.25': '4.12.27'
+  'fast-uri@>=3.0.0 <3.1.2': '3.1.2'
+  '@hono/node-server@>=1.0.0 <1.19.10': '1.19.10'
+  'express-rate-limit@>=8.2.0 <8.2.2': '8.2.2'
+  'path-to-regexp@>=8.0.0 <8.4.0': '8.4.0'
+  'lodash-es@<4.17.24': '4.18.1'
+  'underscore@<1.13.8': '1.13.8'
+  'ws@>=8.0.0 <8.21.0': '8.21.0'
+  'form-data@>=4.0.0 <4.0.6': '4.0.6'
 
 patchedDependencies:
   '@napi-rs/system-ocr@1.0.2': patches/@napi-rs-system-ocr-npm-1.0.2-59e7a78e8b.patch
@@ -85,3 +101,6 @@ supportedArchitectures:
     - current
   cpu:
     - current
+
+minimumReleaseAgeExclude:
+  - tar@7.5.19
