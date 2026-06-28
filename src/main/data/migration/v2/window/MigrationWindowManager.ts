@@ -88,7 +88,7 @@ export class MigrationWindowManager {
       ...(isMac ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 12, y: 15 } } : { frame: false }),
       webPreferences: {
         preload: join(__dirname, '../preload/simplest.js'),
-        sandbox: false,
+        sandbox: true,
         webSecurity: false,
         contextIsolation: true
       }
