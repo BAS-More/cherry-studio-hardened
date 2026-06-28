@@ -22,6 +22,7 @@ import { loggerService } from '@logger'
 import { BaseService, Injectable, Phase, ServicePhase } from '@main/core/lifecycle'
 import { isMac, isWin } from '@main/core/platform'
 import { regionService } from '@main/services/RegionService'
+import { sanitizeChildEnv } from '@main/utils/envSecurity'
 import { getFunctionalKeys, parseJSONC } from '@main/utils/jsonc'
 import { getBinaryExecutionEnv, getBinaryPath, isBinaryExists } from '@main/utils/process'
 import { removeEnvProxy } from '@main/utils/shell-env'
@@ -858,7 +859,10 @@ export class CodeCliService extends BaseService {
     options: { autoUpdateToLatest?: boolean; terminal?: string } = {}
   ): Promise<CodeToolsRunResult> {
     logger.info(`Starting CLI tool launch: ${cliTool} in directory: ${directory}`)
-    env = { ...getBinaryExecutionEnv(), ...env }
+    // Strip process-affecting vars (NODE_OPTIONS, LD_PRELOAD, DYLD_*, ...) from the
+    // IPC-supplied env before it can reach spawn(); drop-and-warn so a stray var does
+    // not block a launch, while closing the env-injection RCE vector. See envSecurity.ts.
+    env = { ...getBinaryExecutionEnv(), ...sanitizeChildEnv(env) }
     logger.debug(`Environment variables:`, Object.keys(env))
     logger.debug(`Options:`, options)
 

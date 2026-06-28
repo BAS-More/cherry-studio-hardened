@@ -2,6 +2,7 @@ import { application } from '@application'
 import { loggerService } from '@logger'
 import { BaseService, Injectable, Phase, ServicePhase } from '@main/core/lifecycle'
 import { fileStorage } from '@main/services/FileStorage'
+import { isDangerousChildEnvKey } from '@main/utils/envSecurity'
 import { IpcChannel } from '@shared/IpcChannel'
 import * as fs from 'fs'
 import StreamZip from 'node-stream-zip'
@@ -233,14 +234,6 @@ export function performVariableSubstitution(
 }
 
 /**
- * Process-affecting environment variables that must never be set from MCP package config.
- * These can alter how the spawned process loads code (preloading shared libraries, injecting
- * Node flags), so a malicious manifest could use them to execute arbitrary code despite the
- * command/arg validation above.
- */
-const DXT_ENV_DENYLIST = ['NODE_OPTIONS', 'LD_PRELOAD', 'LD_LIBRARY_PATH']
-
-/**
  * Validate an MCP package environment map and build a new sanitized object.
  * Package env values bypass the command/arg validation, so apply equivalent hardening here:
  * reject null bytes in keys/values and denylist process-affecting variables.
@@ -259,9 +252,8 @@ export function buildResolvedEnv(
       throw new Error('Invalid MCP package env: null byte detected in environment variable name')
     }
 
-    // Denylist process-affecting variables (DYLD_* on macOS, plus exact matches above).
-    const canonicalKey = key.toUpperCase()
-    if (DXT_ENV_DENYLIST.includes(canonicalKey) || canonicalKey.startsWith('DYLD_')) {
+    // Denylist process-affecting variables (DYLD_* on macOS, NODE_OPTIONS, LD_PRELOAD, ...).
+    if (isDangerousChildEnvKey(key)) {
       throw new Error(`Invalid MCP package env: environment variable "${key}" is not allowed`)
     }
 
