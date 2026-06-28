@@ -65,7 +65,7 @@ advisories (13 distinct packages), scoped to vulnerable ranges to preserve major
 Floored: axios, @xmldom/xmldom, tar, hono, fast-uri, @hono/node-server, express-rate-limit,
 path-to-regexp, lodash-es, underscore, ws, form-data, minimatch (9.0.6→9.0.7), and the deep
 `tar@6.2.1` holdout (via `canvas → @mapbox/node-pre-gyp`; no fixed 6.x release exists → overridden
-to `7.5.19`, `f84b7b8`). Runtime **high + critical advisories are now 0** (27 moderate + 4 low
+to `7.5.19`, `f84b7b8`). Runtime **high + critical advisories are now 0**, and after the moderate sweep **3 moderate, 0 low
 remain). *Gotcha hit & fixed:* an advisory's `patched_versions` floor is not always a real published
 release (`lodash-es@4.17.24` does not exist → pin verified-existing versions, else `pnpm install`
 fails and half-writes the lockfile, breaking the pre-run deps check for every script).
@@ -110,7 +110,7 @@ the launched CLI tool's process.
 13 packages drove the 40 high runtime advisories. Surgical keyed-range overrides floor them to
 verified-existing secure versions. **40 → 0 high** — including the deep `tar@6.2.1` holdout under
 `canvas → @mapbox/node-pre-gyp` (no fixed 6.x; overridden to 7.5.19, `f84b7b8`). Runtime now
-0 high / 0 critical (27 moderate + 4 low remain). Verified: clean `pnpm install`, harness green,
+0 high / 0 critical (after the moderate sweep: 3 moderate, 0 low). Verified: clean `pnpm install`, harness green,
 `typecheck:node` clean.
 
 ### ✅ #9a — Encrypt MCP OAuth tokens at rest (`77877eb`)
@@ -157,6 +157,9 @@ on the `shell:true` branch only; verify it doesn't reject legitimate `.cmd` path
 `canvas → @mapbox/node-pre-gyp` — no fixed 6.x release exists, so overridden to `7.5.19`
 (node-pre-gyp's tar usage is 7-compatible; install clean). Runtime high + critical now 0.
 
-**Moderate/low runtime advisories (27 + 4).** Lower urgency. Floorable with the same keyed-override
-method if desired, but each adds dependency churn for marginal severity — recommend leaving unless a
-specific moderate is reachable in a sensitive path.
+**Moderate/low runtime advisories → swept (`394a4fc`).** 31 (27 moderate + 4 low) → **3 moderate,
+0 low** via keyed overrides. Headline: `dompurify` 3.3.1→3.4.11 (the HTML-sanitizer XSS-bypass fixes),
+plus mermaid, ajv, qs, uuid (11.x), ip-address, brace-expansion, protobufjs, @hono/node-server. The 3
+remaining are deliberate skips — unsafe major bumps or a type break, each needing a coordinated
+app-code change rather than a blind floor: `file-type` (16→21), `js-yaml` (no secure 4.x, only 5.x),
+`@anthropic-ai/sdk` (0.91.1 adds a required `stop_details` that breaks `AiSdkToAnthropicSse` typecheck).
