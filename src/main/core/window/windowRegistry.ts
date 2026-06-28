@@ -84,10 +84,9 @@ export const WINDOW_TYPE_REGISTRY: Partial<Record<WindowType, WindowTypeMetadata
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false,
+        sandbox: true,
         webSecurity: false,
         webviewTag: true,
-        allowRunningInsecureContent: true,
         backgroundThrottling: false
         // zoomFactor depends on PreferenceService → injected via args.options
       }
@@ -124,7 +123,7 @@ export const WINDOW_TYPE_REGISTRY: Partial<Record<WindowType, WindowTypeMetadata
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false,
+        sandbox: true,
         webSecurity: false,
         webviewTag: true
       }
@@ -196,7 +195,7 @@ export const WINDOW_TYPE_REGISTRY: Partial<Record<WindowType, WindowTypeMetadata
         }
       },
       webPreferences: {
-        sandbox: false,
+        sandbox: true,
         webSecurity: false,
         webviewTag: true,
         // REQUIRED: SubWindow hosts streaming LLM responses and WebSocket heartbeats;
@@ -257,7 +256,7 @@ export const WINDOW_TYPE_REGISTRY: Partial<Record<WindowType, WindowTypeMetadata
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false,
+        sandbox: true,
         webSecurity: false,
         webviewTag: true
       }
@@ -347,7 +346,7 @@ export const WINDOW_TYPE_REGISTRY: Partial<Record<WindowType, WindowTypeMetadata
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false,
+        sandbox: true,
         devTools: isDev
       }
     },
@@ -403,7 +402,7 @@ export const WINDOW_TYPE_REGISTRY: Partial<Record<WindowType, WindowTypeMetadata
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false,
+        sandbox: true,
         devTools: true
       }
     },

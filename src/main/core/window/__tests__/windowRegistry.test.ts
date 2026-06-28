@@ -32,6 +32,29 @@ function resetPlatform(): void {
   platform.isLinux = false
 }
 
+describe('window security posture', () => {
+  // Captured at collection time (registry is pristine before any setFixture mutation).
+  // Exclude the fixture key, which the mergeWindowOptions tests overwrite.
+  const realEntries = (Object.entries(WINDOW_TYPE_REGISTRY) as [string, RegistryEntry][]).filter(
+    ([key]) => key !== String(fixtureKey)
+  )
+
+  it('has core windows registered', () => {
+    expect(realEntries.length).toBeGreaterThan(0)
+  })
+
+  it.each(realEntries)('window "%s" does not disable the renderer sandbox', (_key, entry) => {
+    const wp = entry.windowOptions?.webPreferences
+    // sandbox may be unset (Electron default = true) but must never be explicitly false.
+    expect(wp?.sandbox).not.toBe(false)
+  })
+
+  it.each(realEntries)('window "%s" does not allow running insecure content', (_key, entry) => {
+    const wp = entry.windowOptions?.webPreferences
+    expect(wp?.allowRunningInsecureContent).not.toBe(true)
+  })
+})
+
 describe('mergeWindowOptions', () => {
   beforeEach(() => {
     resetPlatform()
