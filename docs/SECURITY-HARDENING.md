@@ -60,12 +60,13 @@ advisories (13 distinct packages), scoped to vulnerable ranges to preserve major
 
 | Scope | high (before → after) | total (before → after) |
 |---|---|---|
-| Runtime (`--prod`) | **40 → 6** | 111 → 38 |
+| Runtime (`--prod`) | **40 → 0** | 111 → 31 |
 
 Floored: axios, @xmldom/xmldom, tar, hono, fast-uri, @hono/node-server, express-rate-limit,
-path-to-regexp, lodash-es, underscore, ws, form-data, minimatch (9.0.6→9.0.7). The **residual 6
-highs are all `tar`**, pulled transitively via `@vectorstores/readers@0.1.8` — a bounded follow-up
-(§5). *Gotcha hit & fixed:* an advisory's `patched_versions` floor is not always a real published
+path-to-regexp, lodash-es, underscore, ws, form-data, minimatch (9.0.6→9.0.7), and the deep
+`tar@6.2.1` holdout (via `canvas → @mapbox/node-pre-gyp`; no fixed 6.x release exists → overridden
+to `7.5.19`, `f84b7b8`). Runtime **high + critical advisories are now 0** (27 moderate + 4 low
+remain). *Gotcha hit & fixed:* an advisory's `patched_versions` floor is not always a real published
 release (`lodash-es@4.17.24` does not exist → pin verified-existing versions, else `pnpm install`
 fails and half-writes the lockfile, breaking the pre-run deps check for every script).
 
@@ -81,7 +82,7 @@ fails and half-writes the lockfile, breaking the pre-run deps check for every sc
 | 3 | CSP / X-Frame-Options stripped for `*://*/*` | `MainWindowService.ts:389-403` | CRITICAL | 🟡 MiniApp-coupled |
 | 9a | OAuth tokens / client secrets / PKCE verifiers stored plaintext | `mcp/oauth/storage.ts` | CRITICAL | ✅ **fixed** (`77877eb`) |
 | 9b | Provider API keys stored plaintext | `userProvider.ts` schema; `ProviderService` | CRITICAL | 🟡 DB-test-blocked here |
-| — | High-severity runtime dep CVEs (Phase 1) | `pnpm audit --prod` | HIGH×40 | ✅ **40→6** (`b7f037d`) |
+| — | High-severity runtime dep CVEs (Phase 1) | `pnpm audit --prod` | HIGH×40 | ✅ **40→0** (`b7f037d`,`f84b7b8`) |
 | 5 | `verifyUpdateCodeSignature:false` | `electron-builder.yml:92` | HIGH | 🟡 decision-dependent |
 | 4 | `shell:true` for non-`.exe` Windows commands | `process.ts:493-500` | MEDIUM (args are arrays; cmd validated upstream) | 🟡 follow-up |
 | 8 | Pyodide loaded from CDN without SRI (version *is* pinned `v0.28.0`) | `pyodide.worker.ts:18-19` | MEDIUM | 🟡 follow-up |
@@ -107,8 +108,10 @@ the launched CLI tool's process.
 
 ### ✅ Phase 1 — Floor high-severity runtime CVEs (`b7f037d`)
 13 packages drove the 40 high runtime advisories. Surgical keyed-range overrides floor them to
-verified-existing secure versions. **40 → 6 high** (residual all `tar` via `@vectorstores/readers`).
-Verified: clean `pnpm install`, harness 146 pass/8 skip, `typecheck:node` clean.
+verified-existing secure versions. **40 → 0 high** — including the deep `tar@6.2.1` holdout under
+`canvas → @mapbox/node-pre-gyp` (no fixed 6.x; overridden to 7.5.19, `f84b7b8`). Runtime now
+0 high / 0 critical (27 moderate + 4 low remain). Verified: clean `pnpm install`, harness green,
+`typecheck:node` clean.
 
 ### ✅ #9a — Encrypt MCP OAuth tokens at rest (`77877eb`)
 OAuth access/refresh tokens, client secrets, and PKCE verifiers were plaintext JSON on disk.
@@ -150,6 +153,10 @@ on the `shell:true` branch only; verify it doesn't reject legitimate `.cmd` path
 **#8 — Pyodide.** Bundle Pyodide locally (≈10 MB) or add SRI/`connect-src` restriction via the
 (future) renderer CSP.
 
-**Residual `tar` highs (6).** All via `@vectorstores/readers@0.1.8`. Either add an exact
-`'tar@7.5.9': '<secure>'` override (then re-audit for other sub-7.5.11 instances) or bump the
-upstream dep. Verify against `pnpm install` + harness.
+**~~Residual `tar` highs~~ → DONE (`f84b7b8`).** The 6 were `tar@6.2.1` via
+`canvas → @mapbox/node-pre-gyp` — no fixed 6.x release exists, so overridden to `7.5.19`
+(node-pre-gyp's tar usage is 7-compatible; install clean). Runtime high + critical now 0.
+
+**Moderate/low runtime advisories (27 + 4).** Lower urgency. Floorable with the same keyed-override
+method if desired, but each adds dependency churn for marginal severity — recommend leaving unless a
+specific moderate is reachable in a sensitive path.
