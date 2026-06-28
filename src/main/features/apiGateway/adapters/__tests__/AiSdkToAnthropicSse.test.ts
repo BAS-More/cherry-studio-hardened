@@ -463,6 +463,7 @@ describe('AiSdkToAnthropicSse', () => {
           container: null,
           stop_reason: null,
           stop_sequence: null,
+          stop_details: null,
           usage: {
             input_tokens: 10,
             output_tokens: 0,
