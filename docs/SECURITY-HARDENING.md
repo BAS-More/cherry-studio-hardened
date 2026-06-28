@@ -33,6 +33,8 @@ here, the verification harness for `src/main` changes is the exact-file subset b
 ```
 pnpm exec vitest run --project main --reporter=dot \
   src/main/utils/__tests__/envSecurity.test.ts \
+  src/main/utils/__tests__/secretStore.test.ts \
+  src/main/ai/mcp/oauth/__tests__/storage.test.ts \
   src/main/core/window/__tests__/windowRegistry.test.ts \
   src/main/services/__tests__/MainWindowService.test.ts \
   src/main/services/codeCli/__tests__/CodeCliService.test.ts \
@@ -51,11 +53,21 @@ pnpm typecheck:node
 | Runtime (`--prod`) | 111 | 0 | **40** | 65 | 6 |
 | Full (incl. dev) | 185 | 6 | 73 | 96 | 10 |
 
-All 6 criticals are **dev-only** (absent from `--prod`). Remediation plan: floor reachable
-transitive CVEs via root `pnpm.overrides`, re-run `pnpm install --frozen-lockfile=false` +
-the harness, then `pnpm audit --prod --audit-level high` as the gate. **Not yet applied** (⏳) —
-overrides can introduce peer conflicts and must be verified against a full build, which is the
-next sized piece of work.
+All 6 criticals are **dev-only** (absent from `--prod`).
+
+**✅ Done (`b7f037d`).** Keyed-range overrides in `pnpm-workspace.yaml` floor the HIGH runtime
+advisories (13 distinct packages), scoped to vulnerable ranges to preserve major-line APIs:
+
+| Scope | high (before → after) | total (before → after) |
+|---|---|---|
+| Runtime (`--prod`) | **40 → 6** | 111 → 38 |
+
+Floored: axios, @xmldom/xmldom, tar, hono, fast-uri, @hono/node-server, express-rate-limit,
+path-to-regexp, lodash-es, underscore, ws, form-data, minimatch (9.0.6→9.0.7). The **residual 6
+highs are all `tar`**, pulled transitively via `@vectorstores/readers@0.1.8` — a bounded follow-up
+(§5). *Gotcha hit & fixed:* an advisory's `patched_versions` floor is not always a real published
+release (`lodash-es@4.17.24` does not exist → pin verified-existing versions, else `pnpm install`
+fails and half-writes the lockfile, breaking the pre-run deps check for every script).
 
 ---
 
@@ -67,7 +79,9 @@ next sized piece of work.
 | 1 | `webSecurity:false` | `windowRegistry.ts:88,128,200,261`; `MigrationWindowManager.ts:92` | HIGH | 🟡 MiniApp-coupled |
 | 2 | `sandbox:false` | `windowRegistry.ts:87,127,199,260,350,406`; `MigrationWindowManager.ts:91` | HIGH | 🟡 MiniApp-coupled |
 | 3 | CSP / X-Frame-Options stripped for `*://*/*` | `MainWindowService.ts:389-403` | CRITICAL | 🟡 MiniApp-coupled |
-| 9 | API keys + OAuth tokens stored plaintext | `userProvider.ts` schema; `ProviderService.getRotatedApiKey`; `mcp/oauth/storage.ts` | CRITICAL | 🟡 migration |
+| 9a | OAuth tokens / client secrets / PKCE verifiers stored plaintext | `mcp/oauth/storage.ts` | CRITICAL | ✅ **fixed** (`77877eb`) |
+| 9b | Provider API keys stored plaintext | `userProvider.ts` schema; `ProviderService` | CRITICAL | 🟡 DB-test-blocked here |
+| — | High-severity runtime dep CVEs (Phase 1) | `pnpm audit --prod` | HIGH×40 | ✅ **40→6** (`b7f037d`) |
 | 5 | `verifyUpdateCodeSignature:false` | `electron-builder.yml:92` | HIGH | 🟡 decision-dependent |
 | 4 | `shell:true` for non-`.exe` Windows commands | `process.ts:493-500` | MEDIUM (args are arrays; cmd validated upstream) | 🟡 follow-up |
 | 8 | Pyodide loaded from CDN without SRI (version *is* pinned `v0.28.0`) | `pyodide.worker.ts:18-19` | MEDIUM | 🟡 follow-up |
@@ -91,6 +105,20 @@ the launched CLI tool's process.
 - **Tests:** new `envSecurity.test.ts` (9 cases) + existing `McpPackageService`/`CodeCliService`
   suites still green. **Verified:** harness 133 pass / 8 skip, `typecheck:node` clean.
 
+### ✅ Phase 1 — Floor high-severity runtime CVEs (`b7f037d`)
+13 packages drove the 40 high runtime advisories. Surgical keyed-range overrides floor them to
+verified-existing secure versions. **40 → 6 high** (residual all `tar` via `@vectorstores/readers`).
+Verified: clean `pnpm install`, harness 146 pass/8 skip, `typecheck:node` clean.
+
+### ✅ #9a — Encrypt MCP OAuth tokens at rest (`77877eb`)
+OAuth access/refresh tokens, client secrets, and PKCE verifiers were plaintext JSON on disk.
+- **New** `src/main/utils/secretStore.ts` — `encryptSecret`/`decryptSecret` over Electron
+  `safeStorage` (OS keychain), `enc:v1:` envelope, fail-open when no keychain, legacy-plaintext
+  passthrough (transparent migration).
+- `JsonFileStorage` (`mcp/oauth/storage.ts`) encrypts on write, decrypts on read.
+- **Tests:** `secretStore.test.ts` + new `storage.test.ts` cases assert ciphertext-on-disk,
+  round-trip, and legacy-file migration. Verified: harness 146 pass/8 skip, `typecheck:node` clean.
+
 ---
 
 ## 5. Remaining — recommended approach (NOT done blind)
@@ -104,10 +132,13 @@ keep the relaxed prefs ONLY on the dedicated MiniApp `<webview>` partition; set
 window. **Requires running the actual app** to confirm MiniApps still load and the main window
 isn't white-screened — cannot be verified in this headless environment.
 
-**#9 — plaintext secrets → `safeStorage`.**
-Encrypt `user_provider.apiKeys` and `mcp/oauth/storage.ts` tokens at rest with Electron
-`safeStorage.encryptString`, plus a one-time migration of existing plaintext values + a fallback
-when the OS keychain is unavailable. This is a feature-sized change with a data-migration path.
+**#9b — provider API keys → `safeStorage`.** OAuth tokens are now encrypted (`77877eb`). The
+remaining piece is `user_provider.apiKeys` (DB-backed). Cleanest design: a Drizzle `customType`
+wrapping the `apiKeys` column — `toDriver` encrypts the JSON, `fromDriver` decrypts (legacy
+plaintext passes through, re-encrypted on next write) — a single choke point covering every
+read/write site in `ProviderService`, reusing the shipped `secretStore` util. **Not done here**:
+its verifying tests use the SQLite native layer that segfaults on this Windows box (§1), so it
+must be implemented where DB tests run (Linux/macOS CI).
 
 **#5 — update signature.** If releases are signed (`scripts/win-sign.js` + a real cert): set
 `verifyUpdateCodeSignature: true`. If builds are unsigned (typical local fork): **disable the
@@ -119,5 +150,6 @@ on the `shell:true` branch only; verify it doesn't reject legitimate `.cmd` path
 **#8 — Pyodide.** Bundle Pyodide locally (≈10 MB) or add SRI/`connect-src` restriction via the
 (future) renderer CSP.
 
-**Phase 1 overrides.** Apply `pnpm.overrides` for the 40 high runtime advisories, then re-verify
-against a full `pnpm build` + harness.
+**Residual `tar` highs (6).** All via `@vectorstores/readers@0.1.8`. Either add an exact
+`'tar@7.5.9': '<secure>'` override (then re-audit for other sub-7.5.11 instances) or bump the
+upstream dep. Verify against `pnpm install` + harness.
