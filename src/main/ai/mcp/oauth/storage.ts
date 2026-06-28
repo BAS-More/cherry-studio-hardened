@@ -1,4 +1,5 @@
 import { loggerService } from '@logger'
+import { decryptSecret, encryptSecret } from '@main/utils/secretStore'
 import type {
   OAuthClientInformation,
   OAuthClientInformationMixed,
@@ -29,8 +30,9 @@ export class JsonFileStorage implements IOAuthStorage {
     }
 
     try {
-      const data = await fs.readFile(this.filePath, 'utf-8')
-      const parsed = JSON.parse(data)
+      const raw = await fs.readFile(this.filePath, 'utf-8')
+      // Decrypt at-rest payload; legacy plaintext files pass through unchanged (migrated on next write).
+      const parsed = JSON.parse(decryptSecret(raw))
       const validated = OAuthStorageSchema.parse(parsed)
       this.cache = validated
       return validated
@@ -54,9 +56,10 @@ export class JsonFileStorage implements IOAuthStorage {
       // Update timestamp
       data.lastUpdated = Date.now()
 
-      // Write file atomically
+      // Write file atomically, encrypting the serialized payload at rest (OAuth tokens,
+      // client secret, code verifier). safeStorage-backed; see secretStore.ts.
       const tempPath = `${this.filePath}.tmp`
-      await fs.writeFile(tempPath, JSON.stringify(data, null, 2))
+      await fs.writeFile(tempPath, encryptSecret(JSON.stringify(data)))
       await fs.rename(tempPath, this.filePath)
 
       // Update cache
