@@ -11,16 +11,11 @@
  */
 
 import type { EndpointType } from '@shared/data/types/model'
-import type {
-  ApiFeatures,
-  ApiKeyEntry,
-  AuthConfig,
-  EndpointConfig,
-  ProviderSettings
-} from '@shared/data/types/provider'
+import type { ApiFeatures, AuthConfig, EndpointConfig, ProviderSettings } from '@shared/data/types/provider'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import { createUpdateTimestamps, orderKeyColumns, orderKeyIndex } from './_columnHelpers'
+import { encryptedApiKeys } from './_customTypes'
 
 export const userProviderTable = sqliteTable(
   'user_provider',
@@ -41,8 +36,8 @@ export const userProviderTable = sqliteTable(
     /** Default text generation endpoint (when supporting multiple) */
     defaultChatEndpoint: text().$type<EndpointType>(),
 
-    /** API Keys array */
-    apiKeys: text({ mode: 'json' }).$type<ApiKeyEntry[]>().default([]),
+    /** API Keys array — each `.key` is encrypted at rest via safeStorage (see _customTypes). */
+    apiKeys: encryptedApiKeys().default([]),
 
     /** Unified auth configuration for different auth methods */
     authConfig: text({ mode: 'json' }).$type<AuthConfig>(),
