@@ -47,7 +47,7 @@ const logger = loggerService.withContext('AiSdkToAnthropicSse')
 /**
  * Newer `@anthropic-ai/sdk` requires fields the gateway has no real source for
  * (cache TTL breakdown, inference geo, service tier, code-execution container,
- * tool caller). The gateway forwards models the client invokes, so these are
+ * tool caller, refusal stop-details). The gateway forwards models the client invokes, so these are
  * always client-side null; supply the SDK-required defaults to satisfy the type
  * while keeping the emitted SSE shapes otherwise unchanged.
  */
@@ -55,6 +55,7 @@ const NULL_CACHE_CREATION = null
 const NULL_INFERENCE_GEO = null
 const NULL_SERVICE_TIER = null
 const NULL_CONTAINER = null
+const NULL_STOP_DETAILS = null
 
 /**
  * Adapter that converts AI SDK fullStream events to Anthropic SSE events
@@ -98,6 +99,7 @@ export class AiSdkToAnthropicSse extends BaseStreamAdapter<RawMessageStreamEvent
       model: this.state.model,
       stop_reason: null,
       stop_sequence: null,
+      stop_details: NULL_STOP_DETAILS,
       usage
     }
 
@@ -463,7 +465,8 @@ export class AiSdkToAnthropicSse extends BaseStreamAdapter<RawMessageStreamEvent
       delta: {
         container: NULL_CONTAINER,
         stop_reason: (this.state.stopReason as StopReason) || 'end_turn',
-        stop_sequence: null
+        stop_sequence: null,
+        stop_details: NULL_STOP_DETAILS
       },
       usage
     }
@@ -524,6 +527,7 @@ export class AiSdkToAnthropicSse extends BaseStreamAdapter<RawMessageStreamEvent
       model: this.state.model,
       stop_reason: (this.state.stopReason as StopReason) || 'end_turn',
       stop_sequence: null,
+      stop_details: NULL_STOP_DETAILS,
       usage: {
         input_tokens: this.state.inputTokens,
         output_tokens: this.state.outputTokens,
