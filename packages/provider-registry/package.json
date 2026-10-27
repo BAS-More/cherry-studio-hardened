@@ -55,8 +55,8 @@
     "dotenv": "^17.2.3",
     "tsdown": "^0.16.6",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.13",
-    "zod": "^4.1.12"
+    "vitest": "^4.1.11",
+    "zod": "^4.6.6"
   },
   "peerDependencies": {},
   "dependencies": {
