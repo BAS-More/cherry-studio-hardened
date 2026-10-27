@@ -46,7 +46,7 @@
     "@cherrystudio/ai-sdk-provider": "workspace:*",
     "@openrouter/ai-sdk-provider": "^2.3.3",
     "quick-lru": "^5.1.1",
-    "zod": "^4.1.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@cherrystudio/ai-sdk-provider": "workspace:*",
@@ -54,7 +54,7 @@
     "oxlint": "^1.36.0",
     "tsdown": "^0.20.3",
     "typescript": "^5.0.0",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   },
   "sideEffects": false,
   "engines": {

@@ -26,6 +26,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "glob": "^11.0.3"
+    "glob": "^13.0.6"
   }
 }

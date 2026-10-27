@@ -101,7 +101,7 @@
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
-    "katex": "0.16.22",
+    "katex": "0.18.2",
     "mermaid": "^11.13.0",
     "tailwind-merge": "^2.5.5",
     "unified": "^11.0.5",
@@ -130,13 +130,13 @@
     "linguist-languages": "^9.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "storybook": "^10.0.5",
+    "storybook": "^10.6.2",
     "svgo": "^3.3.2",
     "ts-morph": "^27.0.2",
     "tsdown": "^0.15.5",
     "tsx": "^4.20.6",
     "typescript": "^5.6.2",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   },
   "sideEffects": [
     "**/*.css"
